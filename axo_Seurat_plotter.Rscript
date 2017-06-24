@@ -16,7 +16,7 @@ plot_axo_seurat = function(sc_obj_file) { # just seurat object filename
 		
     TSNEPlot(sc)
 
-    source("/seq/RNASEQ/COLLAB/JessicaWhitedAxolotl/SeuratUtil/tissue_signatures/axo_sig_trans.R")
+    source("tissue_signatures/axo_sig_trans.R")
 
     # color by number of genes
     FeaturePlot(sc, c("nGene"), cols.use = c("green", "blue"))
