@@ -1,0 +1,88 @@
+
+
+
+plot_axo_seurat = function(sc_obj_file) { # just seurat object filename
+
+
+	library(Seurat)
+    library(dplyr)
+
+	pdf_filename = paste0(sc_obj_file, ".axo_plot.pdf")
+	pdf(file=pdf_filename)
+
+	message("loading: ", sc_obj_file)
+	load(sc_obj_file)
+	message("done loading, now plotting.")
+		
+    TSNEPlot(sc)
+
+    source("/seq/RNASEQ/COLLAB/JessicaWhitedAxolotl/SeuratUtil/tissue_signatures/axo_sig_trans.R")
+
+    # color by number of genes
+    FeaturePlot(sc, c("nGene"), cols.use = c("green", "blue"))
+
+    # regress out nGene signal:
+    sc = RegressOut(sc, latent.vars = c("nGene"))
+
+
+    # score signatures:
+
+    sigscore = function(seurat_obj, genes_vec, metadata_name) {
+        exprVals = seurat_obj@raw.data[ rownames(seurat_obj@raw.data) %in% genes_vec, ]
+        
+        meanExprVals = colMeans(exprVals)
+
+        seurat_obj = AddMetaData(seurat_obj, meanExprVals, metadata_name)
+
+        FeaturePlot(seurat_obj, c(metadata_name), cols.use = c("green", "blue"))
+
+        return(seurat_obj)
+    }
+
+
+	sc.markers <- FindAllMarkers(sc, only.pos = TRUE, min.pct = 0.25, thresh.use = 0.25)
+    sc.markers %>% group_by(cluster) %>% top_n(2, avg_diff)
+
+
+	sc.markers %>% group_by(cluster) %>% top_n(10, avg_diff) -> top10
+    
+    # setting slim.col.label to TRUE will print just the cluster IDS instead of every cell name
+	DoHeatmap(sc, genes.use = top10$gene, order.by.ident = TRUE, slim.col.label = TRUE, remove.key = TRUE)
+
+    sc = sigscore(sc, elbow_forearm_hand_upperarm, "arm.sig")
+
+    sc = sigscore(sc, hand, "hand.sig")
+
+    sc = sigscore(sc, blood, "blood.sig")
+
+    sc = sigscore(sc, Bone, "Bone.sig")
+
+    sc = sigscore(sc, CartLong_CartWrist, "Cartilage.sig")
+
+    sc = sigscore(sc, skeletal, "SkeletalMuscle.sig")
+
+    sc = sigscore(sc, distal_proximal, "blastema.sig")
+
+
+    sc = sigscore(sc, c('c1092650_g1_i1'), 'cirbp:c1092650_g1_i1')
+	VlnPlot(sc, c('c1092650_g1_i1'))
+    
+    sc = sigscore(sc, c('c1076561_g4_i1'), 'kazd1:c1076561_g4_i1')
+    VlnPlot(sc, c('c1076561_g4_i1'))
+
+	sc = sigscore(sc, c('c1085624_g5_i1'), 'vwde:c1085624_g5_i1')
+    VlnPlot(sc, c('c1085624_g5_i1'))
+	
+	sc = sigscore(sc, c('c1091168_g1_i1'), 'natterin:c1091168_g1_i1')
+    VlnPlot(sc, c('c1091168_g1_i1'))
+	
+	
+
+
+    dev.off()
+
+    return(sc)
+
+}
+
+
